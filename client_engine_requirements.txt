@@ -1,0 +1,7 @@
+opencv-python
+matplotlib
+pillow
+scikit-learn
+scikit-image
+line_profiler
+tqdm
