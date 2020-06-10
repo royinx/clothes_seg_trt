@@ -5,3 +5,4 @@ scikit-learn
 scikit-image
 line_profiler
 tqdm
+cython

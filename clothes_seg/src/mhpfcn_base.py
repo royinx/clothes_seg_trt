@@ -3,6 +3,7 @@ import cv2
 # from line_profiler import LineProfiler
 import json
 # profile = LineProfiler()
+import post_process
 
 # Debugging
 def var(var):
@@ -93,31 +94,35 @@ class MHPFCNBase(object):
         pass
         ## return a list , since the NN output maybe more than one layer in different shape. 
 
-    # @profile
     def _postprocess(self, masks:np.ndarray, pads:list, resized_imgs:list ): # inp:batch
-        # threshold filter
-        masks[masks < self.score_threshold] = -100  # can be zero / -ve value
+        return post_process.postprocess_cython(masks, pads, resized_imgs) #NCHW (64,1,ori_H,ori_W)
+        
 
-        # resize to N,C,H,W (N,3,360,640) for 21 class
-        n,c,_,_= masks.shape
-        mask_batch = np.zeros((n,c,self.net_h,self.net_w),dtype=np.float32)
-        for n,img in enumerate(masks):
-            for c, class_ in enumerate(img):
-                mask_batch[n][c] = self.mask_resize(class_, (self.net_w, self.net_h))
-        # Argmax
-        mask_batch = np.argmax(mask_batch, axis=1).astype(np.uint8) # axis = 1 , If NCHW  (batch, 21, 12, 20)
-        mask_batch[np.isin(mask_batch, self.ignore_class)] = 0
+    # @profile
+    # def _postprocess(self, masks:np.ndarray, pads:list, resized_imgs:list ): # inp:batch
+    #     # threshold filter
+    #     masks[masks < self.score_threshold] = -100  # can be zero / -ve value
 
-        # del padding
-        mask_batch = list(mask_batch)
-        for idx,pad in enumerate(pads):
-            top_pad, left_pad, h,w,_ = *pad , *resized_imgs[idx].shape
-            if top_pad:
-                mask_batch[idx] = mask_batch[idx][top_pad:top_pad + h,:] # top pad 
-            else:
-                mask_batch[idx] = mask_batch[idx][:,left_pad:left_pad + w] # left pad 
+    #     # resize to N,C,H,W (N,3,360,640) for 21 class
+    #     n,c,_,_= masks.shape
+    #     mask_batch = np.zeros((n,c,self.net_h,self.net_w),dtype=np.float32)
+    #     for n,img in enumerate(masks):
+    #         for c, class_ in enumerate(img):
+    #             mask_batch[n][c] = self.mask_resize(class_, (self.net_w, self.net_h))
+    #     # Argmax
+    #     mask_batch = np.argmax(mask_batch, axis=1).astype(np.uint8) # axis = 1 , If NCHW  (batch, 21, 12, 20)
+    #     mask_batch[np.isin(mask_batch, self.ignore_class)] = 0
 
-        return mask_batch
+    #     # del padding
+    #     mask_batch = list(mask_batch)
+    #     for idx,pad in enumerate(pads):
+    #         top_pad, left_pad, h,w,_ = *pad , *resized_imgs[idx].shape
+    #         if top_pad:
+    #             mask_batch[idx] = mask_batch[idx][top_pad:top_pad + h,:] # top pad 
+    #         else:
+    #             mask_batch[idx] = mask_batch[idx][:,left_pad:left_pad + w] # left pad 
+
+    #     return mask_batch
 
     def _postprocess_single(self, inp, ori_shape:tuple):
         inp[inp < self.score_threshold] = 0

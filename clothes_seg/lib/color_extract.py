@@ -38,7 +38,7 @@ class ColorFilter(object):
         self.color_fmt = color_fmt
 
     def read_color_fmt(self, class_fmt):
-        with open('/py/clothes_seg/config/config_color.json', 'r') as infile:
+        with open('clothes_seg/config/config_color.json', 'r') as infile:
             data = json.load(infile)
             for key, value in data[class_fmt].items():
                 setattr(self, key, value)
